@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 
 import Weather from "./models/Weather.js";
+import Crop from "./models/Crop.js";
 
 dotenv.config();
 const app = express();
@@ -40,6 +41,25 @@ app.get("/api/weather", async (req, res) => {
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/crops", async (req, res) => {
+  try {
+    const crop = new Crop(req.body);
+    await crop.save();
+    res.status(201).json(crop);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+app.get("/api/crops", async (req, res) => {
+  try {
+    const crops = await Crop.find();
+    res.json(crops);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
