@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
+import cors from "cors";
 
 import Weather from "./models/Weather.js";
 import Crop from "./models/Crop.js";
@@ -14,7 +15,16 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
+
 app.use(express.json());
+
+// ✅ rute
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/crops", cropsRouter);
@@ -27,13 +37,13 @@ app.get("/", (req, res) => {
   res.send("🌱 Agriculture API Running");
 });
 
-app.get("/api/weather", (req, res) => {
-  res.json({
-    temperature: 22,
-    humidity: 65,
-    rainfall: "low",
-    cropRecommendation: "Good time for planting potatoes 🌿",
-  });
+app.get("/api/weather", async (req, res) => {
+  try {
+    const data = await Weather.find();
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.post("/api/weather", async (req, res) => {
@@ -41,15 +51,6 @@ app.post("/api/weather", async (req, res) => {
     const newWeather = new Weather(req.body);
     await newWeather.save();
     res.status(201).json(newWeather);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.get("/api/weather", async (req, res) => {
-  try {
-    const data = await Weather.find();
-    res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -76,7 +77,6 @@ app.get("/api/crops", async (req, res) => {
 
 app.get("/api/recommendation", async (req, res) => {
   try {
-  
     const latestWeather = await Weather.findOne().sort({ date: -1 });
     if (!latestWeather) {
       return res.status(404).json({ message: "No weather data found" });
@@ -86,9 +86,10 @@ app.get("/api/recommendation", async (req, res) => {
     const recommendations = [];
 
     crops.forEach((crop) => {
-   
-      const tempMatch = Math.abs(crop.optimalTemperature - latestWeather.temperature) <= 3;
-      const humidityMatch = Math.abs(crop.optimalHumidity - latestWeather.humidity) <= 10;
+      const tempMatch =
+        Math.abs(crop.optimalTemperature - latestWeather.temperature) <= 3;
+      const humidityMatch =
+        Math.abs(crop.optimalHumidity - latestWeather.humidity) <= 10;
 
       if (tempMatch && humidityMatch) {
         recommendations.push({
@@ -116,6 +117,5 @@ mongoose
   .catch((err) => console.error("❌ MongoDB Connection Error:", err));
 
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`🚀 Server is running on http://localhost:${PORT}`);
 });
-

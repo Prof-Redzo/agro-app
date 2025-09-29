@@ -1,19 +1,64 @@
-import { Routes, Route, Link } from "react-router-dom";
+import { Routes, Route, Link, useNavigate } from "react-router-dom";
+import { AppBar, Toolbar, Button, Typography, Container, Box } from "@mui/material";
+import Register from "./pages/Register";
+import Login from "./pages/Login";
 
 function App() {
-  return (
-    <div>
-      <nav>
-        <Link to="/">Home</Link> | <Link to="/login">Login</Link> |{" "}
-        <Link to="/register">Register</Link>
-      </nav>
+  const username = localStorage.getItem("username");
+  const navigate = useNavigate();
 
-      <Routes>
-        <Route path="/" element={<h2>Welcome to Agriculture App 🌱</h2>} />
-        <Route path="/login" element={<h2>Login Page</h2>} />
-        <Route path="/register" element={<h2>Register Page</h2>} />
-      </Routes>
-    </div>
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("username");
+    navigate("/login");
+  };
+
+  return (
+    <Box sx={{ flexGrow: 1, bgcolor: "#e9fce9", minHeight: "100vh" }}>
+      {/* Navbar */}
+      <AppBar position="static" sx={{ bgcolor: "#6bb36a" }}>
+        <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
+          <Box>
+            <Button component={Link} to="/" color="inherit">
+              Home
+            </Button>
+            {!username && (
+              <>
+                <Button component={Link} to="/login" color="inherit">
+                  Login
+                </Button>
+                <Button component={Link} to="/register" color="inherit">
+                  Register
+                </Button>
+              </>
+            )}
+          </Box>
+          {username && (
+            <Button variant="contained" color="error" onClick={handleLogout}>
+              Logout
+            </Button>
+          )}
+        </Toolbar>
+      </AppBar>
+
+      {/* Main */}
+      <Container sx={{ mt: 4 }}>
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <Typography variant="h4" align="center" color="green">
+                {username
+                  ? `Welcome, ${username} 🌱`
+                  : "Welcome to Agriculture App 🌱"}
+              </Typography>
+            }
+          />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+        </Routes>
+      </Container>
+    </Box>
   );
 }
 
