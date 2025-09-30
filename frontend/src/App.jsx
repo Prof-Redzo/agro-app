@@ -2,6 +2,19 @@ import { Routes, Route, Link, useNavigate } from "react-router-dom";
 import { AppBar, Toolbar, Button, Typography, Container, Box } from "@mui/material";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+
+function ProtectedRoute({ children }) {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    return (
+      <Typography variant="h6" color="error" align="center" sx={{ mt: 4 }}>
+        Access denied. Please login first.
+      </Typography>
+    );
+  }
+  return children;
+}
 
 function App() {
   const username = localStorage.getItem("username");
@@ -32,6 +45,11 @@ function App() {
                 </Button>
               </>
             )}
+            {username && (
+              <Button component={Link} to="/dashboard" color="inherit">
+                Dashboard
+              </Button>
+            )}
           </Box>
           {username && (
             <Button variant="contained" color="error" onClick={handleLogout}>
@@ -56,6 +74,14 @@ function App() {
           />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </Container>
     </Box>
