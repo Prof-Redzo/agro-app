@@ -1,67 +1,103 @@
 import { useEffect, useState } from "react";
-import { Container, Typography, Paper, Box, CircularProgress, List, ListItem, ListItemText } from "@mui/material";
-import api from "../api/axios.js";
+import {
+  Typography,
+  CircularProgress,
+  Card,
+  CardContent,
+  List,
+  ListItem,
+  ListItemText,
+} from "@mui/material";
+import axios from "axios";
 
 function Dashboard() {
+  const [weather, setWeather] = useState(null); 
+  const [recommendations, setRecommendations] = useState([]); 
   const [loading, setLoading] = useState(true);
-  const [weather, setWeather] = useState(null);
-  const [recommendations, setRecommendations] = useState([]);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await api.get("/recommendation");
-        setWeather(res.data.weather);
-        setRecommendations(res.data.recommendations);
-        setLoading(false);
-      } catch (err) {
+    if (!navigator.geolocation) {
+      setError("Geolocation is not supported by your browser");
+      setLoading(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+
+          const weatherRes = await axios.get(
+            `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${
+              import.meta.env.VITE_WEATHER_API_KEY
+            }&units=metric`
+          );
+
+          setWeather(weatherRes.data);
+
+          const recRes = await axios.get("http://localhost:5000/api/recommendation");
+          setRecommendations(recRes.data.recommendations || []);
+        } catch (err) {
+          console.error(err);
+          setError("Failed to fetch weather or recommendations");
+        } finally {
+          setLoading(false);
+        }
+      },
+      (err) => {
         console.error(err);
-        setError("❌ Failed to load dashboard data.");
+        setError("Unable to retrieve location");
         setLoading(false);
       }
-    };
-    fetchData();
+    );
   }, []);
 
-  if (loading) return <CircularProgress sx={{ display: "block", mx: "auto", mt: 5 }} />;
+  if (loading)
+    return <CircularProgress sx={{ display: "block", m: "20px auto" }} />;
+  if (error)
+    return (
+      <Typography color="error" align="center">
+        {error}
+      </Typography>
+    );
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom align="center">
-        🌱 Dashboard
-      </Typography>
+    <>
+      <Card sx={{ maxWidth: 400, m: "20px auto", p: 2, bgcolor: "#f4fff4" }}>
+        <CardContent>
+          <Typography variant="h5" gutterBottom>
+            Weather in {weather.name}
+          </Typography>
+          <Typography>🌡 Temperature: {weather.main.temp} °C</Typography>
+          <Typography>☁ Condition: {weather.weather[0].description}</Typography>
+          <Typography>💨 Wind: {weather.wind.speed} m/s</Typography>
+          <Typography>💧 Humidity: {weather.main.humidity}%</Typography>
+        </CardContent>
+      </Card>
 
-      {error && (
-        <Typography color="error" align="center">
-          {error}
-        </Typography>
-      )}
-
-      {weather && (
-        <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
-          <Typography variant="h6">Current Weather</Typography>
-          <Typography>🌡️ Temperature: {weather.temperature}°C</Typography>
-          <Typography>💧 Humidity: {weather.humidity}%</Typography>
-          <Typography>☔ Rainfall: {weather.rainfall}</Typography>
-        </Paper>
-      )}
-
-      <Paper elevation={3} sx={{ p: 3 }}>
-        <Typography variant="h6">Recommendations</Typography>
-        {recommendations.length > 0 ? (
-          <List>
-            {recommendations.map((rec, i) => (
-              <ListItem key={i}>
-                <ListItemText primary={rec.message} />
-              </ListItem>
-            ))}
-          </List>
-        ) : (
-          <Typography>No recommendations available at the moment.</Typography>
-        )}
-      </Paper>
-    </Container>
+      <Card sx={{ maxWidth: 500, m: "20px auto", p: 2, bgcolor: "#e8f5e9" }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            🌱 Recommendations
+          </Typography>
+          {recommendations.length > 0 ? (
+            <List>
+              {recommendations.map((rec, i) => (
+                <ListItem key={i}>
+                  <ListItemText
+                    primary={rec.message}
+                    secondary={`Crop: ${rec.crop}`}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          ) : (
+            <Typography>No suitable crops for current weather.</Typography>
+          )}
+        </CardContent>
+      </Card>
+    </>
   );
 }
 

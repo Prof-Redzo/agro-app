@@ -10,6 +10,7 @@ import authRoutes from "./routes/auth.js";
 import { auth } from "./middleware/auth.js";
 import userRoutes from "./routes/user.js";
 import cropsRouter from "./routes/crops.js";
+import weatherRoutes from "./routes/weather.js";
 
 dotenv.config();
 const app = express();
@@ -24,10 +25,10 @@ app.use(
 
 app.use(express.json());
 
-// ✅ rute
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/crops", cropsRouter);
+app.use("/api/weather", weatherRoutes);
 
 app.get("/api/user/me", auth, (req, res) => {
   res.json({ message: "Welcome!", user: req.user });
