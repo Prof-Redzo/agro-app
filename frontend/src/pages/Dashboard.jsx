@@ -4,21 +4,22 @@ import {
   CircularProgress,
   Card,
   CardContent,
-  List,
-  ListItem,
-  ListItemText,
+  Box,
 } from "@mui/material";
 import axios from "axios";
 
-function Dashboard() {
-  const [weather, setWeather] = useState(null); 
-  const [recommendations, setRecommendations] = useState([]); 
+function Dashboard({ language, username }) {
+  const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!navigator.geolocation) {
-      setError("Geolocation is not supported by your browser");
+      setError(
+        language === "bs"
+          ? "Geolokacija nije podržana u tvom pretraživaču"
+          : "Geolocation is not supported by your browser"
+      );
       setLoading(false);
       return;
     }
@@ -28,33 +29,62 @@ function Dashboard() {
         try {
           const { latitude, longitude } = position.coords;
 
-          const weatherRes = await axios.get(
+          const response = await axios.get(
             `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${
               import.meta.env.VITE_WEATHER_API_KEY
             }&units=metric`
           );
 
-          setWeather(weatherRes.data);
-
-          const recRes = await axios.get("http://localhost:5000/api/recommendation");
-          setRecommendations(recRes.data.recommendations || []);
+          setWeather(response.data);
         } catch (err) {
-          console.error(err);
-          setError("Failed to fetch weather or recommendations");
+          setError(
+            language === "bs"
+              ? "Neuspjelo preuzimanje podataka o vremenu"
+              : "Failed to fetch weather data"
+          );
         } finally {
           setLoading(false);
         }
       },
-      (err) => {
-        console.error(err);
-        setError("Unable to retrieve location");
+      () => {
+        setError(
+          language === "bs"
+            ? "Nije moguće preuzeti lokaciju"
+            : "Unable to retrieve location"
+        );
         setLoading(false);
       }
     );
-  }, []);
+  }, [language]);
+
+  const getRecommendation = () => {
+    if (!weather) return "";
+    const temp = weather.main.temp;
+    const condition = weather.weather[0].main.toLowerCase();
+
+    if (language === "bs") {
+      if (temp > 25 && condition.includes("clear"))
+        return "☀ Vrijeme je pogodno za žetvu!";
+      if (temp >= 10 && temp <= 25 && condition.includes("cloud"))
+        return "🌱 Dobro vrijeme za sjetvu!";
+      if (condition.includes("rain"))
+        return "🌧 Izbjegavajte radove na polju danas.";
+      return "ℹ Nastavite pratiti vremenske uslove.";
+    } else {
+      if (temp > 25 && condition.includes("clear"))
+        return "☀ The weather is great for harvesting!";
+      if (temp >= 10 && temp <= 25 && condition.includes("cloud"))
+        return "🌱 Good conditions for sowing!";
+      if (condition.includes("rain"))
+        return "🌧 Avoid field work today.";
+      return "ℹ Keep monitoring weather conditions.";
+    }
+  };
 
   if (loading)
-    return <CircularProgress sx={{ display: "block", m: "20px auto" }} />;
+    return (
+      <CircularProgress sx={{ display: "block", m: "20px auto" }} />
+    );
   if (error)
     return (
       <Typography color="error" align="center">
@@ -63,41 +93,49 @@ function Dashboard() {
     );
 
   return (
-    <>
+    <Box>
+      <Typography variant="h4" align="center" color="primary" gutterBottom>
+        {language === "bs"
+          ? `Kontrolna ploča - Dobrodošao ${username}`
+          : `Dashboard - Welcome ${username}`}
+      </Typography>
+
       <Card sx={{ maxWidth: 400, m: "20px auto", p: 2, bgcolor: "#f4fff4" }}>
         <CardContent>
           <Typography variant="h5" gutterBottom>
-            Weather in {weather.name}
+            {language === "bs"
+              ? `Vrijeme u ${weather.name}`
+              : `Weather in ${weather.name}`}
           </Typography>
-          <Typography>🌡 Temperature: {weather.main.temp} °C</Typography>
-          <Typography>☁ Condition: {weather.weather[0].description}</Typography>
-          <Typography>💨 Wind: {weather.wind.speed} m/s</Typography>
-          <Typography>💧 Humidity: {weather.main.humidity}%</Typography>
+          <Typography>
+            🌡 {language === "bs" ? "Temperatura" : "Temperature"}:{" "}
+            {weather.main.temp} °C
+          </Typography>
+          <Typography>
+            ☁ {language === "bs" ? "Uslov" : "Condition"}:{" "}
+            {weather.weather[0].description}
+          </Typography>
+          <Typography>
+            💨 {language === "bs" ? "Vjetar" : "Wind"}: {weather.wind.speed} m/s
+          </Typography>
+          <Typography>
+            💧 {language === "bs" ? "Vlažnost" : "Humidity"}:{" "}
+            {weather.main.humidity}%
+          </Typography>
         </CardContent>
       </Card>
 
-      <Card sx={{ maxWidth: 500, m: "20px auto", p: 2, bgcolor: "#e8f5e9" }}>
+      <Card
+        sx={{ maxWidth: 400, m: "20px auto", p: 2, bgcolor: "#fff9e6" }}
+      >
         <CardContent>
-          <Typography variant="h6" gutterBottom>
-            🌱 Recommendations
+          <Typography variant="h6">
+            {language === "bs" ? "Preporuka" : "Recommendation"}
           </Typography>
-          {recommendations.length > 0 ? (
-            <List>
-              {recommendations.map((rec, i) => (
-                <ListItem key={i}>
-                  <ListItemText
-                    primary={rec.message}
-                    secondary={`Crop: ${rec.crop}`}
-                  />
-                </ListItem>
-              ))}
-            </List>
-          ) : (
-            <Typography>No suitable crops for current weather.</Typography>
-          )}
+          <Typography>{getRecommendation()}</Typography>
         </CardContent>
       </Card>
-    </>
+    </Box>
   );
 }
 

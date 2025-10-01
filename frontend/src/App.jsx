@@ -1,5 +1,14 @@
 import { Routes, Route, Link, useNavigate } from "react-router-dom";
-import { AppBar, Toolbar, Button, Typography, Container, Box } from "@mui/material";
+import {
+  AppBar,
+  Toolbar,
+  Button,
+  Typography,
+  Container,
+  Box,
+} from "@mui/material";
+import { useState } from "react";
+import Home from "./pages/Home";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -20,10 +29,17 @@ function App() {
   const username = localStorage.getItem("username");
   const navigate = useNavigate();
 
+  // Language state
+  const [language, setLanguage] = useState("bs"); // bs = bosanski, en = english
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("username");
     navigate("/login");
+  };
+
+  const toggleLanguage = () => {
+    setLanguage((prev) => (prev === "bs" ? "en" : "bs"));
   };
 
   return (
@@ -33,29 +49,38 @@ function App() {
         <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
           <Box>
             <Button component={Link} to="/" color="inherit">
-              Home
+              {language === "bs" ? "Početna" : "Home"}
             </Button>
             {!username && (
               <>
                 <Button component={Link} to="/login" color="inherit">
-                  Login
+                  {language === "bs" ? "Prijava" : "Login"}
                 </Button>
                 <Button component={Link} to="/register" color="inherit">
-                  Register
+                  {language === "bs" ? "Registracija" : "Register"}
                 </Button>
               </>
             )}
             {username && (
               <Button component={Link} to="/dashboard" color="inherit">
-                Dashboard
+                {language === "bs" ? "Kontrolna ploča" : "Dashboard"}
               </Button>
             )}
           </Box>
-          {username && (
-            <Button variant="contained" color="error" onClick={handleLogout}>
-              Logout
+          <Box sx={{ display: "flex", gap: 2 }}>
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={toggleLanguage}
+            >
+              {language === "bs" ? "EN" : "BS"}
             </Button>
-          )}
+            {username && (
+              <Button variant="contained" color="error" onClick={handleLogout}>
+                {language === "bs" ? "Odjava" : "Logout"}
+              </Button>
+            )}
+          </Box>
         </Toolbar>
       </AppBar>
 
@@ -65,20 +90,16 @@ function App() {
           <Route
             path="/"
             element={
-              <Typography variant="h4" align="center" color="green">
-                {username
-                  ? `Welcome, ${username} 🌱`
-                  : "Welcome to Agriculture App 🌱"}
-              </Typography>
+              <Home language={language} username={username} />
             }
           />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<Login language={language} />} />
+          <Route path="/register" element={<Register language={language} />} />
           <Route
             path="/dashboard"
             element={
               <ProtectedRoute>
-                <Dashboard />
+                <Dashboard language={language} username={username} />
               </ProtectedRoute>
             }
           />
