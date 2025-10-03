@@ -11,6 +11,7 @@ import { auth } from "./middleware/auth.js";
 import userRoutes from "./routes/user.js";
 import cropsRouter from "./routes/crops.js";
 import weatherRoutes from "./routes/weather.js";
+import cultureRoutes from "./routes/cultureRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -29,6 +30,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/crops", cropsRouter);
 app.use("/api/weather", weatherRoutes);
+app.use("/api/cultures", cultureRoutes);
 
 app.get("/api/user/me", auth, (req, res) => {
   res.json({ message: "Welcome!", user: req.user });

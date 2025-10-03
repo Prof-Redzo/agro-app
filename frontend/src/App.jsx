@@ -12,6 +12,7 @@ import Home from "./pages/Home";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import Cultures from "./pages/Cultures";
 
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem("token");
@@ -61,6 +62,9 @@ function App() {
                 </Button>
               </>
             )}
+            <Button component={Link} to="/cultures" color="inherit">
+              {language === "bs" ? "Kulture" : "Cultures"}
+            </Button>
             {username && (
               <Button component={Link} to="/dashboard" color="inherit">
                 {language === "bs" ? "Kontrolna ploča" : "Dashboard"}
@@ -89,12 +93,11 @@ function App() {
         <Routes>
           <Route
             path="/"
-            element={
-              <Home language={language} username={username} />
-            }
+            element={<Home language={language} username={username} />}
           />
           <Route path="/login" element={<Login language={language} />} />
           <Route path="/register" element={<Register language={language} />} />
+          <Route path="/cultures" element={<Cultures language={language} />} />
           <Route
             path="/dashboard"
             element={
