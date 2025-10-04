@@ -14,9 +14,29 @@ function Dashboard({ language, username }) {
   const [error, setError] = useState(null);
   const [recommendation, setRecommendation] = useState("");
 
+  const weatherTranslations = {
+    "clear sky": "vedro nebo",
+    "few clouds": "malo oblaka",
+    "scattered clouds": "raštrkani oblaci",
+    "broken clouds": "pretežno oblačno",
+    "overcast clouds": "oblačno",
+    "light rain": "slaba kiša",
+    "moderate rain": "umjerena kiša",
+    "heavy intensity rain": "jaka kiša",
+    "shower rain": "pljusak",
+    "rain": "kiša",
+    "thunderstorm": "grmljavina",
+    "snow": "snijeg",
+    "mist": "magla",
+  };
+
   useEffect(() => {
     if (!navigator.geolocation) {
-      setError("Geolocation is not supported by your browser.");
+      setError(
+        language === "bs"
+          ? "Vaš pretraživač ne podržava geolokaciju."
+          : "Geolocation is not supported by your browser."
+      );
       setLoading(false);
       return;
     }
@@ -36,18 +56,26 @@ function Dashboard({ language, username }) {
           generateRecommendation(response.data);
         } catch (err) {
           console.error(err);
-          setError("Failed to fetch weather data.");
+          setError(
+            language === "bs"
+              ? "Greška pri dohvaćanju podataka o vremenu."
+              : "Failed to fetch weather data."
+          );
         } finally {
           setLoading(false);
         }
       },
       (err) => {
         console.error(err);
-        setError("Unable to retrieve location.");
+        setError(
+          language === "bs"
+            ? "Nije moguće dobiti vašu lokaciju."
+            : "Unable to retrieve location."
+        );
         setLoading(false);
       }
     );
-  }, [language]); 
+  }, [language]);
 
   const generateRecommendation = (data) => {
     const month = new Date().getMonth() + 1;
@@ -88,6 +116,13 @@ function Dashboard({ language, username }) {
       </Typography>
     );
 
+  // ✅ Translate - weather
+  const description =
+    language === "bs"
+      ? weatherTranslations[weather.weather[0].description] ||
+        weather.weather[0].description
+      : weather.weather[0].description;
+
   return (
     <Box sx={{ textAlign: "center" }}>
       <Typography variant="h5" gutterBottom>
@@ -112,12 +147,16 @@ function Dashboard({ language, username }) {
               ? `Vrijeme u ${weather.name}`
               : `Weather in ${weather.name}`}
           </Typography>
-          <Typography>🌡 {weather.main.temp} °C</Typography>
+
+          <Typography>🌡 {weather.main.temp.toFixed(1)} °C</Typography>
+          <Typography>☁ {description}</Typography>
           <Typography>
-            ☁ {weather.weather[0].description}
+            💧 {weather.main.humidity}%{" "}
+            {language === "bs" ? "vlaga" : "humidity"}
           </Typography>
-          <Typography>💧 {weather.main.humidity}% humidity</Typography>
-          <Typography>💨 {weather.wind.speed} m/s wind</Typography>
+          <Typography>
+            💨 {weather.wind.speed} m/s {language === "bs" ? "vjetar" : "wind"}
+          </Typography>
 
           <Box sx={{ mt: 2, bgcolor: "#d9f7d9", p: 2, borderRadius: 2 }}>
             <Typography variant="body1" color="green">
