@@ -1,16 +1,64 @@
-# React + Vite
+## 🖥️ 2️⃣ FRONTEND — `frontend/README.md`
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+# 🌿 Agro-App Frontend
 
-Currently, two official plugins are available:
+The **frontend** part of the Agro-App, built with **React (Vite)** and **Material UI (MUI)**.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## ⚙️ Setup
 
-The React Compiler is not enabled on this template. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+cd frontend
+npm install
+npm run dev
+The application will be available at:
+👉 http://localhost:5173
 
-## Expanding the ESLint configuration
+📂 Project Structure
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+src/
+├── components/
+│   └── ...
+├── pages/
+│   ├── Home.jsx
+│   ├── Login.jsx
+│   ├── Register.jsx
+│   ├── Dashboard.jsx
+│   └── Cultures.jsx
+├── App.jsx
+└── main.jsx
+🌍 Multilingual Support
+The app supports Bosnian and English languages.
+You can switch language via the EN / BS button in the navigation bar.
+The selected language is saved to localStorage.
+
+🔒 Authentication
+Tokens and usernames are stored in localStorage
+
+Protected routes are managed using the ProtectedRoute component
+
+After successful login or registration, the user is redirected to the Dashboard
+
+🧠 Libraries Used
+React Router DOM
+
+Material UI
+
+Axios
+
+Vite
+
+dotenv (via import.meta.env)
+
+📸 Main Pages
+🏠 Home – Welcome and overview page
+
+🌍 Cultures – Overview of agricultural cultures in Bosnia and Herzegovina
+
+📊 Dashboard – Real-time weather data and planting/harvesting advice
+
+🔐 Login / Register – User authentication
+
+📜 License
+MIT License © 2025 Redžo Efendić
