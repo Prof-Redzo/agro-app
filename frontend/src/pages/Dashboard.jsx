@@ -6,7 +6,9 @@ import {
   CardContent,
   Box,
 } from "@mui/material";
+import { toast, ToastContainer } from "react-toastify";
 import axios from "axios";
+import "react-toastify/dist/ReactToastify.css";
 
 function Dashboard({ language, username }) {
   const [weather, setWeather] = useState(null);
@@ -14,6 +16,11 @@ function Dashboard({ language, username }) {
   const [error, setError] = useState(null);
   const [recommendation, setRecommendation] = useState("");
 
+  // 🔹 Local Storage favorites
+  const user = JSON.parse(localStorage.getItem("user")) || {};
+  const favorites = user.favorites || [];
+
+  // 🔹 Weather translations
   const weatherTranslations = {
     "clear sky": "vedro nebo",
     "few clouds": "malo oblaka",
@@ -54,6 +61,7 @@ function Dashboard({ language, username }) {
 
           setWeather(response.data);
           generateRecommendation(response.data);
+          checkWeatherAlerts(response.data);
         } catch (err) {
           console.error(err);
           setError(
@@ -77,6 +85,7 @@ function Dashboard({ language, username }) {
     );
   }, [language]);
 
+  // 🔹 Recommendation
   const generateRecommendation = (data) => {
     const month = new Date().getMonth() + 1;
     const temp = data.main.temp;
@@ -105,10 +114,71 @@ function Dashboard({ language, username }) {
     }
 
     setRecommendation(msg);
+
+    // 💬 Toast info
+    toast.info(msg, {
+      position: "bottom-right",
+      autoClose: 4000,
+    });
+
+    // 🎯 Favorite cultures
+    favorites.forEach((fav) => {
+      if (fav === "Jagoda" && temp >= 15 && temp <= 25) {
+        toast.success(
+          language === "bs"
+            ? "Idealno vrijeme za sadnju jagoda 🍓"
+            : "Perfect time for strawberry planting 🍓"
+        );
+      }
+      if (fav === "Pšenica" && month === 10 && temp < 20) {
+        toast.success(
+          language === "bs"
+            ? "Odlično vrijeme za sjetvu pšenice 🌾"
+            : "Great time for wheat planting 🌾"
+        );
+      }
+      if (fav === "Kukuruz" && month === 4 && temp > 12) {
+        toast.success(
+          language === "bs"
+            ? "Vrijeme za sjetvu kukuruza 🌽"
+            : "Time to plant corn 🌽"
+        );
+      }
+    });
+  };
+
+  // 🔹 Warnings (frost, drought, rain)
+  const checkWeatherAlerts = (data) => {
+    const temp = data.main.temp;
+    const humidity = data.main.humidity;
+    const weatherType = data.weather[0].main.toLowerCase();
+
+    if (temp < 0) {
+      toast.warning(
+        language === "bs"
+          ? "Upozorenje: moguć mraz! ❄️"
+          : "Warning: possible frost! ❄️"
+      );
+    }
+
+    if (humidity < 30 && temp > 25) {
+      toast.warning(
+        language === "bs" ? "Moguća suša 🌞" : "Possible drought 🌞"
+      );
+    }
+
+    if (weatherType.includes("rain") && humidity > 80) {
+      toast.info(
+        language === "bs"
+          ? "Očekuju se obilne padavine ☔"
+          : "Heavy rainfall expected ☔"
+      );
+    }
   };
 
   if (loading)
     return <CircularProgress sx={{ display: "block", m: "20px auto" }} />;
+
   if (error)
     return (
       <Typography color="error" align="center">
@@ -116,7 +186,6 @@ function Dashboard({ language, username }) {
       </Typography>
     );
 
-  // ✅ Translate - weather
   const description =
     language === "bs"
       ? weatherTranslations[weather.weather[0].description] ||
@@ -165,6 +234,9 @@ function Dashboard({ language, username }) {
           </Box>
         </CardContent>
       </Card>
+
+      {/* 🔔 Toast container */}
+      <ToastContainer position="bottom-right" autoClose={4000} />
     </Box>
   );
 }

@@ -7,12 +7,13 @@ import {
   Container,
   Box,
 } from "@mui/material";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Home from "./pages/Home";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Cultures from "./pages/Cultures";
+import UserProfile from "./pages/UserProfile"; 
 
 // 🔒 Protected Route
 function ProtectedRoute({ children }) {
@@ -28,11 +29,22 @@ function ProtectedRoute({ children }) {
 }
 
 function App() {
-  const username = localStorage.getItem("username");
   const navigate = useNavigate();
 
-  // 🌐 Language: Bosnian / English
-  const [language, setLanguage] = useState("bs");
+  // 🧠 localStorage load
+  const [language, setLanguage] = useState(localStorage.getItem("language") || "bs");
+  const [username, setUsername] = useState(localStorage.getItem("username") || "");
+  const [location, setLocation] = useState(localStorage.getItem("location") || "");
+  const [favoriteCrops, setFavoriteCrops] = useState(
+    JSON.parse(localStorage.getItem("favoriteCrops") || "[]")
+  );
+
+  // 💾 Local Storage - save
+  useEffect(() => {
+    localStorage.setItem("language", language);
+    localStorage.setItem("location", location);
+    localStorage.setItem("favoriteCrops", JSON.stringify(favoriteCrops));
+  }, [language, location, favoriteCrops]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -58,7 +70,16 @@ function App() {
               {language === "bs" ? "Kulture" : "Cultures"}
             </Button>
 
-            {!username ? (
+            {username ? (
+              <>
+                <Button component={Link} to="/dashboard" color="inherit">
+                  {language === "bs" ? "Asistent" : "Dashboard"}
+                </Button>
+                <Button component={Link} to="/profile" color="inherit">
+                  {language === "bs" ? "Profil" : "Profile"}
+                </Button>
+              </>
+            ) : (
               <>
                 <Button component={Link} to="/login" color="inherit">
                   {language === "bs" ? "Prijava" : "Login"}
@@ -67,10 +88,6 @@ function App() {
                   {language === "bs" ? "Registracija" : "Register"}
                 </Button>
               </>
-            ) : (
-              <Button component={Link} to="/dashboard" color="inherit">
-                {language === "bs" ? "Asistent" : "Dashboard"}
-              </Button>
             )}
           </Box>
 
@@ -106,7 +123,29 @@ function App() {
             path="/dashboard"
             element={
               <ProtectedRoute>
-                <Dashboard language={language} username={username} />
+                <Dashboard
+                  language={language}
+                  username={username}
+                  location={location}
+                  favoriteCrops={favoriteCrops}
+                />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <UserProfile
+                  language={language}
+                  setLanguage={setLanguage}
+                  username={username}
+                  setUsername={setUsername}
+                  location={location}
+                  setLocation={setLocation}
+                  favoriteCrops={favoriteCrops}
+                  setFavoriteCrops={setFavoriteCrops}
+                />
               </ProtectedRoute>
             }
           />
