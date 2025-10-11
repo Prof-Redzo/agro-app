@@ -17,6 +17,9 @@ logs/*.log
 .DS_Store
 Thumbs.db
 
+# Environment
+.env
+
 # IDE/Editor
 .vscode/
 .idea/

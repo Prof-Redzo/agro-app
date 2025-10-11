@@ -7,7 +7,7 @@ import Weather from "./models/Weather.js";
 import Crop from "./models/Crop.js";
 
 import authRoutes from "./routes/auth.js";
-import { auth } from "./middleware/auth.js";
+import auth from "./middleware/auth.js"; 
 import userRoutes from "./routes/user.js";
 import cropsRouter from "./routes/crops.js";
 import weatherRoutes from "./routes/weather.js";
@@ -26,12 +26,14 @@ app.use(
 
 app.use(express.json());
 
+// ✅ API routes
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/crops", cropsRouter);
 app.use("/api/weather", weatherRoutes);
 app.use("/api/cultures", cultureRoutes);
 
+// ✅ Test authorized route
 app.get("/api/user/me", auth, (req, res) => {
   res.json({ message: "Welcome!", user: req.user });
 });
@@ -40,6 +42,7 @@ app.get("/", (req, res) => {
   res.send("🌱 Agriculture API Running");
 });
 
+// ✅ Weather endpoints
 app.get("/api/weather", async (req, res) => {
   try {
     const data = await Weather.find();
@@ -59,6 +62,7 @@ app.post("/api/weather", async (req, res) => {
   }
 });
 
+// ✅ Crop endpoints
 app.post("/api/crops", async (req, res) => {
   try {
     const crop = new Crop(req.body);
@@ -78,6 +82,7 @@ app.get("/api/crops", async (req, res) => {
   }
 });
 
+// ✅ Recommendation endpoint
 app.get("/api/recommendation", async (req, res) => {
   try {
     const latestWeather = await Weather.findOne().sort({ date: -1 });
@@ -112,10 +117,7 @@ app.get("/api/recommendation", async (req, res) => {
 });
 
 mongoose
-  .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB Connected"))
   .catch((err) => console.error("❌ MongoDB Connection Error:", err));
 

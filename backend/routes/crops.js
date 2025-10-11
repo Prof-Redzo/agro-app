@@ -1,6 +1,6 @@
 import express from "express";
 import Crop from "../models/Crop.js";
-import { auth } from "../middleware/auth.js";
+import auth from "../middleware/auth.js";
 import { authorize } from "../middleware/role.js";
 
 const router = express.Router();
