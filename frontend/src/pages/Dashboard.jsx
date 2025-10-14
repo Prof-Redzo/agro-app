@@ -1,244 +1,136 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import {
+  Container,
   Typography,
   CircularProgress,
   Card,
   CardContent,
-  Box,
 } from "@mui/material";
-import { toast, ToastContainer } from "react-toastify";
-import axios from "axios";
-import "react-toastify/dist/ReactToastify.css";
 
-function Dashboard({ language, username }) {
+const Dashboard = () => {
+  const [user, setUser] = useState(null);
   const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [recommendation, setRecommendation] = useState("");
+  const navigate = useNavigate();
 
-  // 🔹 Local Storage favorites
-  const user = JSON.parse(localStorage.getItem("user")) || {};
-  const favorites = user.favorites || [];
-
-  // 🔹 Weather translations
-  const weatherTranslations = {
-    "clear sky": "vedro nebo",
-    "few clouds": "malo oblaka",
-    "scattered clouds": "raštrkani oblaci",
-    "broken clouds": "pretežno oblačno",
-    "overcast clouds": "oblačno",
-    "light rain": "slaba kiša",
-    "moderate rain": "umjerena kiša",
-    "heavy intensity rain": "jaka kiša",
-    "shower rain": "pljusak",
-    "rain": "kiša",
-    "thunderstorm": "grmljavina",
-    "snow": "snijeg",
-    "mist": "magla",
-  };
+  const language = localStorage.getItem("language") || "bs";
 
   useEffect(() => {
-    if (!navigator.geolocation) {
-      setError(
-        language === "bs"
-          ? "Vaš pretraživač ne podržava geolokaciju."
-          : "Geolocation is not supported by your browser."
-      );
-      setLoading(false);
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        try {
-          const { latitude, longitude } = position.coords;
-
-          const response = await axios.get(
-            `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${
-              import.meta.env.VITE_WEATHER_API_KEY
-            }&units=metric`
-          );
-
-          setWeather(response.data);
-          generateRecommendation(response.data);
-          checkWeatherAlerts(response.data);
-        } catch (err) {
-          console.error(err);
-          setError(
-            language === "bs"
-              ? "Greška pri dohvaćanju podataka o vremenu."
-              : "Failed to fetch weather data."
-          );
-        } finally {
-          setLoading(false);
+    const fetchUserProfile = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          navigate("/login");
+          return;
         }
-      },
-      (err) => {
-        console.error(err);
-        setError(
-          language === "bs"
-            ? "Nije moguće dobiti vašu lokaciju."
-            : "Unable to retrieve location."
+
+        // ✅ API call
+        const res = await axios.get("http://localhost:5000/api/user/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const userData = res.data.user; 
+        setUser(userData);
+
+        if (!userData.location) {
+          navigate("/profile");
+          return;
+        }
+
+        // ✅ Weather API call
+        const weatherRes = await axios.get(
+          `https://api.openweathermap.org/data/2.5/weather?q=${userData.location}&appid=${
+            import.meta.env.VITE_WEATHER_API_KEY
+          }&units=metric`
         );
+
+        setWeather(weatherRes.data);
+      } catch (error) {
+        console.error("❌ Greška pri učitavanju profila:", error);
+        if (error.response && error.response.status === 401) {
+          localStorage.removeItem("token");
+          navigate("/login");
+        }
+      } finally {
         setLoading(false);
       }
-    );
-  }, [language]);
+    };
 
-  // 🔹 Recommendation
-  const generateRecommendation = (data) => {
-    const month = new Date().getMonth() + 1;
-    const temp = data.main.temp;
-    let msg = "";
-
-    if (month >= 3 && month <= 5 && temp > 10) {
-      msg =
-        language === "bs"
-          ? "Idealno vrijeme za sjetvu proljetnih kultura 🌱"
-          : "Perfect time to plant spring crops 🌱";
-    } else if (month >= 7 && month <= 9 && temp > 20) {
-      msg =
-        language === "bs"
-          ? "Vrijeme je za berbu ljetnih plodova 🍓"
-          : "It's time to harvest summer fruits 🍓";
-    } else if (month >= 10 && month <= 11 && temp < 15) {
-      msg =
-        language === "bs"
-          ? "Vrijeme za pripremu zemlje za jesenju sadnju 🍂"
-          : "Time to prepare soil for autumn planting 🍂";
-    } else {
-      msg =
-        language === "bs"
-          ? "Nema posebnih preporuka trenutno."
-          : "No special recommendations at the moment.";
-    }
-
-    setRecommendation(msg);
-
-    // 💬 Toast info
-    toast.info(msg, {
-      position: "bottom-right",
-      autoClose: 4000,
-    });
-
-    // 🎯 Favorite cultures
-    favorites.forEach((fav) => {
-      if (fav === "Jagoda" && temp >= 15 && temp <= 25) {
-        toast.success(
-          language === "bs"
-            ? "Idealno vrijeme za sadnju jagoda 🍓"
-            : "Perfect time for strawberry planting 🍓"
-        );
-      }
-      if (fav === "Pšenica" && month === 10 && temp < 20) {
-        toast.success(
-          language === "bs"
-            ? "Odlično vrijeme za sjetvu pšenice 🌾"
-            : "Great time for wheat planting 🌾"
-        );
-      }
-      if (fav === "Kukuruz" && month === 4 && temp > 12) {
-        toast.success(
-          language === "bs"
-            ? "Vrijeme za sjetvu kukuruza 🌽"
-            : "Time to plant corn 🌽"
-        );
-      }
-    });
-  };
-
-  // 🔹 Warnings (frost, drought, rain)
-  const checkWeatherAlerts = (data) => {
-    const temp = data.main.temp;
-    const humidity = data.main.humidity;
-    const weatherType = data.weather[0].main.toLowerCase();
-
-    if (temp < 0) {
-      toast.warning(
-        language === "bs"
-          ? "Upozorenje: moguć mraz! ❄️"
-          : "Warning: possible frost! ❄️"
-      );
-    }
-
-    if (humidity < 30 && temp > 25) {
-      toast.warning(
-        language === "bs" ? "Moguća suša 🌞" : "Possible drought 🌞"
-      );
-    }
-
-    if (weatherType.includes("rain") && humidity > 80) {
-      toast.info(
-        language === "bs"
-          ? "Očekuju se obilne padavine ☔"
-          : "Heavy rainfall expected ☔"
-      );
-    }
-  };
+    fetchUserProfile();
+  }, [navigate]);
 
   if (loading)
-    return <CircularProgress sx={{ display: "block", m: "20px auto" }} />;
-
-  if (error)
     return (
-      <Typography color="error" align="center">
-        {error}
+      <Container sx={{ textAlign: "center", mt: 5 }}>
+        <CircularProgress />
+      </Container>
+    );
+
+  if (!user)
+    return (
+      <Typography align="center" color="error" sx={{ mt: 4 }}>
+        {language === "bs"
+          ? "Nije moguće učitati korisnika."
+          : "Unable to load user."}
+      </Typography>
+    );
+
+  if (!weather || !weather.weather)
+    return (
+      <Typography align="center" color="error" sx={{ mt: 4 }}>
+        {language === "bs"
+          ? "Podaci o vremenu nisu dostupni."
+          : "Weather data not available."}
       </Typography>
     );
 
   const description =
     language === "bs"
-      ? weatherTranslations[weather.weather[0].description] ||
+      ? {
+          clear: "vedro",
+          clouds: "oblačno",
+          rain: "kišovito",
+          snow: "snježno",
+          mist: "maglovito",
+        }[weather.weather[0].main.toLowerCase()] ||
         weather.weather[0].description
       : weather.weather[0].description;
 
   return (
-    <Box sx={{ textAlign: "center" }}>
-      <Typography variant="h5" gutterBottom>
+    <Container sx={{ mt: 5 }}>
+      <Typography variant="h4" gutterBottom>
         {language === "bs"
-          ? `Dobrodošao, ${username}! 👋`
-          : `Welcome, ${username}! 👋`}
+          ? `Dobrodošao, ${user.username}! 👋`
+          : `Welcome, ${user.username}! 👋`}
       </Typography>
 
-      <Card
-        sx={{
-          maxWidth: 400,
-          m: "20px auto",
-          p: 2,
-          bgcolor: "#f4fff4",
-          boxShadow: 3,
-          borderRadius: 3,
-        }}
-      >
+      <Card sx={{ mt: 3 }}>
         <CardContent>
-          <Typography variant="h6" gutterBottom>
+          <Typography variant="h6">
             {language === "bs"
-              ? `Vrijeme u ${weather.name}`
-              : `Weather in ${weather.name}`}
-          </Typography>
-
-          <Typography>🌡 {weather.main.temp.toFixed(1)} °C</Typography>
-          <Typography>☁ {description}</Typography>
-          <Typography>
-            💧 {weather.main.humidity}%{" "}
-            {language === "bs" ? "vlaga" : "humidity"}
+              ? `Vrijeme u ${user.location}:`
+              : `Weather in ${user.location}:`}
           </Typography>
           <Typography>
-            💨 {weather.wind.speed} m/s {language === "bs" ? "vjetar" : "wind"}
+            🌡️ {weather.main.temp.toFixed(1)}°C — {description}
           </Typography>
-
-          <Box sx={{ mt: 2, bgcolor: "#d9f7d9", p: 2, borderRadius: 2 }}>
-            <Typography variant="body1" color="green">
-              {recommendation}
-            </Typography>
-          </Box>
         </CardContent>
       </Card>
 
-      {/* 🔔 Toast container */}
-      <ToastContainer position="bottom-right" autoClose={4000} />
-    </Box>
+      {user.favoriteCrops && user.favoriteCrops.length > 0 && (
+        <Card sx={{ mt: 3 }}>
+          <CardContent>
+            <Typography variant="h6">
+              {language === "bs" ? "Omiljene kulture:" : "Favorite crops:"}
+            </Typography>
+            <Typography>{user.favoriteCrops.join(", ")}</Typography>
+          </CardContent>
+        </Card>
+      )}
+    </Container>
   );
-}
+};
 
 export default Dashboard;
