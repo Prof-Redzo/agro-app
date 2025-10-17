@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import axios from "axios";
 import {
   Container,
   Typography,
@@ -7,9 +9,37 @@ import {
   CardContent,
   Box,
   Divider,
+  CircularProgress,
 } from "@mui/material";
 
-export default function Home({ user, language }) {
+export default function Home({ user: propUser, language }) {
+  const [user, setUser] = useState(propUser || null);
+  const [loading, setLoading] = useState(!propUser);
+
+  const lang = language || localStorage.getItem("language") || "bs";
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (propUser) return; 
+
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const res = await axios.get("http://localhost:5000/api/user/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setUser(res.data.user);
+      } catch (error) {
+        console.error("❌ Greška pri učitavanju korisnika:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, [propUser]);
+
   const translations = {
     en: {
       welcome: `Welcome, ${user?.name || "Guest"} 🌱`,
@@ -43,18 +73,33 @@ export default function Home({ user, language }) {
     },
   };
 
-  const t = translations[language || "bs"];
+  const t = translations[lang];
+
+  if (loading) {
+    return (
+      <Container sx={{ textAlign: "center", mt: 6 }}>
+        <CircularProgress />
+      </Container>
+    );
+  }
+
+  const displayName =
+    user?.name ||
+    user?.username ||
+    user?.email?.split("@")[0] ||
+    (lang === "bs" ? "Gost" : "Guest");
 
   return (
     <Container maxWidth="md" sx={{ mt: 6, textAlign: "center" }}>
-
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
       >
         <Typography variant="h4" sx={{ fontWeight: "bold", mb: 2 }}>
-          {t.welcome}
+          {lang === "bs"
+            ? `Dobrodošao, ${displayName} 🌱`
+            : `Welcome, ${displayName} 🌱`}
         </Typography>
       </motion.div>
 
